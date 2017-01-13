@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.photo.album.dao.UserDao">
+
+    <resultMap id="BaseResultMap" type="com.photo.album.model.User">
+        <result column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="password" property="password"/>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id,name,password
+    </sql>
+
+    <!-- Base_Where_Condition -->
+    <sql id="Base_Where_Condition">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="name != null">
+                AND name = #{name}
+            </if>
+            <if test="auctionId != null">
+                AND password = #{password}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 按名称查询 -->
+    <select id="getByName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM user WHERE name = #{0}
+    </select>
+
+</mapper>

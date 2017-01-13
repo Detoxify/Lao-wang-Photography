@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--  Logger Level TRACE < DEBUG < INFO < WARN < ERROR  -->
+
+<configuration scan="true" scanPeriod="60 seconds" debug="TRUE">
+    
+    <property name="normal-pattern" value="%d{yyyy-MM-dd.HH:mm:ss} [%thread] %-5level %logger{10}  - %msg%n" />
+    
+	<!-- logback会自动创建文件夹，这样设置了就可以输出日志文件了 -->
+	<!--<substitutionProperty name="logbase" value="../logs" />-->
+	<property name="log.dir" value="../logs" />
+	 
+	<appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${normal-pattern}</pattern>
+		</encoder>
+	</appender>
+	
+	<!-- 文件输出日志 -->
+	<appender name="LogFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoding>UTF-8</encoding>
+		<file>${log.dir}/service.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.dir}/service-%d{yyyy-MM-dd}.log</fileNamePattern>
+			<maxHistory>7</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<pattern>${normal-pattern}</pattern>
+		</encoder>
+	</appender>
+	
+	<!-- 错误记录 -->
+	<appender name="LogErrorFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	    <file>${log.dir}/error.log</file> 
+	    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+	         <level>ERROR</level>
+	         <onMismatch>DENY</onMismatch>
+	         <onMatch>ACCEPT</onMatch>
+	     </filter>
+	     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		    <fileNamePattern>${log.dir}/error_%d{yyyy-MM-dd}.log</fileNamePattern>
+	     	<maxHistory>7</maxHistory>
+         </rollingPolicy>
+	     <encoder>
+			<pattern>${normal-pattern}</pattern>
+		</encoder>
+	</appender>
+	
+	<!-- 鹰眼 -->
+	<!-- 设置异步输入日志 -->
+	<appender name="kafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+		<!-- This is the default encoder that encodes every log message to an utf8-encoded string --> 
+		<encoder class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder"> 
+		<layout class="ch.qos.logback.classic.PatternLayout"> 
+		<pattern>%msg%n</pattern> 
+		</layout> 
+		</encoder> 
+		<topic>checklist</topic> 
+		<keyingStrategy class="com.github.danielwegener.logback.kafka.keying.RoundRobinKeyingStrategy" /> 
+		<deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy" /> 
+		<!-- ensure that every message sent by the executing host is partitioned to the same partition strategy --> 
+		<!-- prod -->
+		<producerConfig>bootstrap.servers=10.10.67.213:9092, 10.10.67.214:9092, 10.10.67.215:9092</producerConfig>
+		<!-- don't wait for a broker to ack the reception of a batch. --> 
+		<producerConfig>acks=0</producerConfig> 
+		<!-- wait up to 1000ms and collect log messages before sending them as a batch --> 
+		<producerConfig>linger.ms=1000</producerConfig> 
+		<!-- even if the producer buffer runs full, do not block the application but start to drop messages --> 
+		<producerConfig>block.on.buffer.full=false</producerConfig> 
+		<!-- this is the fallback appender if kafka is not available. --> 
+		<appender-ref ref="stdout"/>
+	</appender> 
+	
+	<appender name="KafkaASYNC" class="ch.qos.logback.classic.AsyncAppender"> 
+		<appender-ref ref="kafkaAppender" /> 
+	</appender>
+	 
+	<logger name="kafkaLogger"> 
+		<level value="debug" /> 
+		<appender-ref ref="KafkaASYNC" /> 
+	</logger>
+
+	<!-- 鹰眼 -->
+	
+	<!-- 需要记录日志的包 -->
+	<logger name="org.springframework">
+		<level value="INFO" />
+	</logger>
+    <logger name="org.apache.zookeeper">
+        <level value="INFO"/>
+    </logger>
+    <logger name="org.mybatis">
+        <level value="INFO"/>
+    </logger>
+	<!-- 
+	 通过设置additivity="false"可以让日志不向上一级别的logger输出！
+	 -->
+	<root>
+        <level value="INFO" />
+        <appender-ref ref="Console" />
+		<appender-ref ref="LogFile" />
+		<appender-ref ref="LogErrorFile" />
+	</root>
+</configuration>
